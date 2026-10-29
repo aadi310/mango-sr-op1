@@ -94,11 +94,11 @@ const theme = {
 /* Assets + links */
 const DEFAULT_MANGO_LOGO = "/images/design-mode/mango.png";
 const DEFAULT_RDEP_LOGO = "/images/design-mode/RDEP-logo.png";
-const CAMPAIGN_HERO_IMAGE = "/images/design-mode/mango-campaign-hero.jpg";
-const VIDEO_POSTER_IMAGE = "/images/design-mode/mango-video-poster.jpg";
-const NEW_ARRIVALS_IMAGE = "/images/design-mode/mango-new-arrivals.jpg";
-const SUSTAINABILITY_IMAGE = "/images/design-mode/mango-conscious-edit.jpg";
-const STORE_IMAGE = "/images/design-mode/mango-storefront.jpg";
+const CAMPAIGN_HERO_IMAGE = "/images/design-mode/mango-campaign-hero.png";
+const VIDEO_POSTER_IMAGE = "/images/design-mode/mango-video-poster.png";
+const NEW_ARRIVALS_IMAGE = "/images/design-mode/mango-new-arrivals.png";
+const SUSTAINABILITY_IMAGE = "/images/design-mode/mango-conscious-edit.png";
+const STORE_IMAGE = "/images/design-mode/mango-storefront.png";
 const DEFAULT_INSTAGRAM_URL = "https://www.instagram.com/mango/";
 const DEFAULT_STORE_LOCATOR_URL = "https://shop.mango.com/in";
 
