@@ -102,9 +102,10 @@ const STORE_IMAGE = "/images/design-mode/mango-storefront.png";
 const DEFAULT_INSTAGRAM_URL = "https://www.instagram.com/mango/";
 const DEFAULT_STORE_LOCATOR_URL = "https://shop.mango.com/in";
 
-/* Header hero image is shown at its full width with no cropping. If it is taller than this (px at the
- * 400px design width) it is scaled down to fit instead of being cut. Lower it for a shorter header. */
-const HERO_MAX_H = 260;
+/* Header height in px at the 400px design width. The campaign image sits behind the header at full
+ * width (no side cropping) and fades into the dark background at the bottom. Lower this number for a
+ * shorter header, raise it to show more of the image. */
+const HEADER_H = 380;
 
 /* Marketing video: https://youtu.be/NOWWhR1JlGQ */
 const MARKETING_VIDEO_ID = "NOWWhR1JlGQ";
@@ -545,7 +546,7 @@ function useFitScale(): number {
   }, []);
   return scale;
 }
-const zoomStyle = (scale: number): CSSProperties | undefined => (scale === 1 ? undefined : ({ zoom: scale } as CSSProperty));
+const zoomStyle = (scale: number): CSSProperties | undefined => (scale === 1 ? undefined : ({ zoom: scale } as CSSProperties));
 
 /** True while the element is inside the viewport (expanded by `rootMargin`, needs `threshold` visible). */
 function useInView<T extends Element>(ref: RefObject<T | null>, rootMargin: string, threshold: number): boolean {
@@ -1402,7 +1403,6 @@ function ReceiptView({
   const [modal, setModal] = useState<ModalId>(null);
   const [exchangeOpen, setExchangeOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
-  const [heroFailed, setHeroFailed] = useState(false);
   const [email, setEmail] = useState("");
   const [sentTo, setSentTo] = useState("");
   const [emailErr, setEmailErr] = useState("");
@@ -1430,73 +1430,64 @@ function ReceiptView({
         style={zoomStyle(scale)}
         className="mx-auto w-[400px] overflow-hidden bg-[var(--mg-canvas)] pb-0 sm:shadow-[0_24px_60px_-24px_rgba(26,26,26,0.3)]"
       >
-        {/* Compact header: logo row, full uncropped campaign image, then the thank-you message */}
-        <header className="relative overflow-hidden rounded-b-3xl bg-[var(--mg-ink)] text-white">
-          <div className="relative z-10 flex items-center justify-between px-5 pb-3 pt-5">
-            <BrandImage
-              src={logoSrc}
-              alt="MANGO"
-              width={320}
-              height={80}
-              priority
-              className="h-7 w-auto max-w-[48%] object-contain object-left brightness-0 invert"
-              fallbackClassName="mg-display text-[25px] uppercase tracking-[0.12em] text-white"
-            />
-            <span className={`${m} text-[9px] uppercase tracking-[0.16em] text-white/65`}>{store.name.replace(/^Mango\s*/i, "")}</span>
-          </div>
-
-          {!heroFailed && (
-            <div className="relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={CAMPAIGN_HERO_IMAGE}
-                alt=""
-                aria-hidden="true"
-                className="block h-auto w-full object-contain"
-                style={{ maxHeight: HERO_MAX_H }}
-                onError={() => setHeroFailed(true)}
+        {/* Header: the campaign image is the background at full width, fading into dark at the bottom */}
+        <header
+          className="relative overflow-hidden rounded-b-3xl bg-[var(--mg-ink)] text-white"
+          style={{
+            height: HEADER_H,
+            backgroundImage: `linear-gradient(180deg, rgba(15,13,12,.25) 0%, rgba(15,13,12,.08) 27%, rgba(15,13,12,.88) 72%, rgba(15,13,12,1) 100%), url(${CAMPAIGN_HERO_IMAGE})`,
+            backgroundSize: "100% 100%, 100% auto",
+            backgroundPosition: "center, center top",
+            backgroundRepeat: "no-repeat, no-repeat",
+          }}
+        >
+          <div className="relative z-10 flex h-full flex-col px-5 pb-5 pt-5">
+            <div className="flex items-center justify-between border-b border-white/30 pb-4">
+              <BrandImage
+                src={logoSrc}
+                alt="MANGO"
+                width={320}
+                height={80}
+                priority
+                className="h-7 w-auto max-w-[48%] object-contain object-left brightness-0 invert"
+                fallbackClassName="mg-display text-[25px] uppercase tracking-[0.12em] text-white"
               />
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 top-0 h-8"
-                style={{ backgroundImage: "linear-gradient(to bottom, #1A1A1A, rgba(26,26,26,0))" }}
-              />
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 bottom-0 h-24"
-                style={{ backgroundImage: "linear-gradient(to top, #1A1A1A, rgba(26,26,26,0))" }}
-              />
+              <span className={`${m} text-[9px] uppercase tracking-[0.16em] text-white/65`}>{store.name.replace(/^Mango\s*/i, "")}</span>
             </div>
-          )}
 
-          <div className={`relative z-10 px-5 pb-5 ${heroFailed ? "pt-1" : "-mt-12"}`}>
-            <p className="mg-display text-[10px] uppercase tracking-[0.28em] text-[var(--mg-sand)]">A good choice, {firstName}</p>
-            <h1 className="mg-display mt-1.5 text-[38px] uppercase leading-[0.9] tracking-[-0.055em]">Thank you.</h1>
-            <p className="mt-2 text-[12px] leading-relaxed text-white/85">Your style makes a difference.</p>
-            <div className="mt-4 flex items-center justify-between rounded-full border border-white/25 px-4 py-2 text-[10px] uppercase tracking-[0.13em] text-white/80">
-              <span>{store.name.replace(/^Mango\s*/i, "")}</span>
-              <span>{data.date.split(" ")[0]}</span>
+            <div className="mt-auto">
+              <p className="mg-display text-[10px] uppercase tracking-[0.28em] text-[var(--mg-sand)]">A good choice, {firstName}</p>
+              <h1 className="mg-display mt-2 text-[42px] uppercase leading-[0.9] tracking-[-0.055em]">Thank you.</h1>
+              <p className="mt-2.5 text-[12px] leading-relaxed text-white/85">Your style makes a difference.</p>
+              <div className="mt-4 flex items-center justify-between rounded-full border border-white/25 px-4 py-2 text-[10px] uppercase tracking-[0.13em] text-white/80">
+                <span>{store.name.replace(/^Mango\s*/i, "")}</span>
+                <span>{data.date.split(" ")[0]}</span>
+              </div>
             </div>
           </div>
+          <span aria-hidden="true" className="pointer-events-none absolute -right-14 top-[105px] h-44 w-44 rounded-full border-[1px] border-white/15" />
+          <span aria-hidden="true" className="pointer-events-none absolute -right-8 top-[135px] h-32 w-32 rounded-full border-[16px] border-white/[0.04]" />
         </header>
 
         <div className="space-y-6 px-5 pb-0 pt-5">
           {/* 1. Feedback sits right under the header */}
           <SleekRateCard data={data} onSubmit={onSubmitFeedback} />
 
-          {/* 2. Purchase overview: amount paid, QR (display only), invoice and payment */}
-          <section aria-label="Purchase overview" className={`rounded-3xl bg-white p-5 text-[var(--mg-ink)] ${lift}`}>
-            <div className="flex items-center justify-between gap-4">
+          {/* 2. Purchase overview: compact. Amount + saving + QR on one row, invoice and payment on one line */}
+          <section aria-label="Purchase overview" className={`rounded-3xl bg-white p-4 text-[var(--mg-ink)] ${lift}`}>
+            <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="mg-display text-[10px] uppercase tracking-[0.2em] text-[var(--mg-brown)]">You paid</p>
-                <p className="mg-display mt-1.5 text-[36px] leading-none tracking-[-0.05em]">₹{inr(t.total)}</p>
-                {t.discount > 0 && (
-                  <p className="mg-display mt-3 inline-block rounded-full bg-[var(--mg-sand)] px-3 py-1 text-[10px] uppercase tracking-[0.08em]">
-                    You saved ₹{inr(t.discount)}
-                  </p>
-                )}
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <p className="mg-display text-[10px] uppercase tracking-[0.2em] text-[var(--mg-brown)]">You paid</p>
+                  {t.discount > 0 && (
+                    <span className="mg-display rounded-full bg-[var(--mg-sand)] px-2 py-0.5 text-[9px] uppercase tracking-[0.06em]">
+                      Saved ₹{inr(t.discount)}
+                    </span>
+                  )}
+                </div>
+                <p className="mg-display mt-1 text-[32px] leading-none tracking-[-0.05em]">₹{inr(t.total)}</p>
               </div>
-              <div className="h-[92px] w-[92px] shrink-0 overflow-hidden rounded-2xl border border-black/10 bg-white p-1.5">
+              <div className="h-[68px] w-[68px] shrink-0 overflow-hidden rounded-xl border border-black/10 bg-white p-1">
                 {qrSrc ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={qrSrc} alt="Receipt QR code" className="h-full w-full object-contain" />
@@ -1506,16 +1497,15 @@ function ReceiptView({
               </div>
             </div>
 
-            <dl className={`${m} mt-4 grid grid-cols-2 gap-2 text-[10px]`}>
-              <div className="min-w-0 rounded-2xl bg-[var(--mg-wash)] px-3 py-2.5">
-                <dt className="text-[9px] uppercase tracking-[0.12em] text-[var(--mg-brown)]">Invoice</dt>
-                <dd className="mt-1 break-all font-bold">{data.invoiceNo}</dd>
+            <dl className={`${m} mt-3 flex items-start justify-between gap-3 border-t border-dashed border-black/15 pt-2.5 text-[9px]`}>
+              <div className="min-w-0">
+                <dt className="uppercase tracking-[0.12em] text-[var(--mg-brown)]">Invoice</dt>
+                <dd className="mt-0.5 break-all font-bold">{data.invoiceNo}</dd>
               </div>
-              <div className="min-w-0 rounded-2xl bg-[var(--mg-wash)] px-3 py-2.5">
-                <dt className="text-[9px] uppercase tracking-[0.12em] text-[var(--mg-brown)]">Payment</dt>
-                <dd className="mt-1 font-bold">
-                  {data.payment.mode}
-                  <span className="mt-0.5 block break-all text-[9px] font-normal text-[var(--mg-brown)]">{data.payment.ref}</span>
+              <div className="shrink-0 text-right">
+                <dt className="uppercase tracking-[0.12em] text-[var(--mg-brown)]">Payment</dt>
+                <dd className="mt-0.5 font-bold">
+                  {data.payment.mode} · <span className="font-normal text-[var(--mg-brown)]">{data.payment.ref}</span>
                 </dd>
               </div>
             </dl>
