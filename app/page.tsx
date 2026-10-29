@@ -94,6 +94,11 @@ const theme = {
 /* Assets + links */
 const DEFAULT_MANGO_LOGO = "/images/design-mode/mango.png";
 const DEFAULT_RDEP_LOGO = "/images/design-mode/RDEP-logo.png";
+const CAMPAIGN_HERO_IMAGE = "/images/design-mode/mango-campaign-hero.jpg";
+const VIDEO_POSTER_IMAGE = "/images/design-mode/mango-video-poster.jpg";
+const NEW_ARRIVALS_IMAGE = "/images/design-mode/mango-new-arrivals.jpg";
+const SUSTAINABILITY_IMAGE = "/images/design-mode/mango-conscious-edit.jpg";
+const STORE_IMAGE = "/images/design-mode/mango-storefront.jpg";
 const DEFAULT_INSTAGRAM_URL = "https://www.instagram.com/mango/";
 const DEFAULT_STORE_LOCATOR_URL = "https://shop.mango.com/in";
 
@@ -970,9 +975,21 @@ function VideoCard() {
   return (
     <section ref={sectionRef} aria-label="Mango video">
       <div
-        className={`relative aspect-video w-full overflow-hidden rounded-3xl bg-[var(--mg-ink)] bg-cover bg-center ${lift}`}
-        style={{ backgroundImage: `url(https://i.ytimg.com/vi/${MARKETING_VIDEO_ID}/hqdefault.jpg)` }}
+        className="relative aspect-[4/5] w-full overflow-hidden bg-[var(--mg-ink)] bg-cover bg-center"
+        style={{ backgroundImage: `linear-gradient(0deg, rgba(15,13,12,.84), rgba(15,13,12,.02) 68%), url(${VIDEO_POSTER_IMAGE})` }}
       >
+        {!mounted && (
+          <button
+            type="button"
+            onClick={() => setMounted(true)}
+            aria-label="Play Mango fashion film"
+            className="absolute inset-0 flex flex-col justify-end p-5 text-left text-white"
+          >
+            <span className="mb-4 grid h-14 w-14 place-items-center rounded-full border border-white/80 text-xl">▶</span>
+            <span className="mg-display text-[28px] uppercase leading-[.95] tracking-[-.04em]">Style lives<br />beyond the purchase.</span>
+            <span className="mt-3 text-[10px] uppercase tracking-[.18em] text-white/75">Watch the campaign · 00:30</span>
+          </button>
+        )}
         {mounted && (
           <iframe
             ref={frameRef}
@@ -1475,12 +1492,20 @@ function ReceiptView({
         className="mx-auto w-[400px] overflow-hidden bg-[var(--mg-canvas)] pb-0 sm:shadow-[0_24px_60px_-24px_rgba(26,26,26,0.3)]"
       >
         {/* MANGO / receipt as a fashion-editorial object, not a stack of cards */}
-        <header className="relative overflow-hidden bg-[var(--mg-ink)] px-5 pb-5 pt-5 text-white">
-          <div className="flex items-center justify-between border-b border-white/30 pb-4">
+        <header
+          className="relative min-h-[520px] overflow-hidden bg-[var(--mg-ink)] px-5 pb-5 pt-5 text-white"
+          style={{
+            backgroundImage: `linear-gradient(180deg, rgba(15,13,12,.25) 0%, rgba(15,13,12,.08) 27%, rgba(15,13,12,.88) 72%, rgba(15,13,12,1) 100%), url(${CAMPAIGN_HERO_IMAGE})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center top",
+          }}
+        >
+          <div className="relative z-10 flex items-center justify-between border-b border-white/30 pb-4">
+
             <BrandImage src={logoSrc} alt="MANGO" width={320} height={80} priority className="h-7 w-auto max-w-[48%] object-contain object-left brightness-0 invert" fallbackClassName="mg-display text-[25px] uppercase tracking-[0.12em] text-white" />
             <span className={`${m} text-[9px] uppercase tracking-[0.16em] text-white/65`}>Digital receipt<br />No. {data.invoiceNo.slice(-6)}</span>
           </div>
-          <div className="relative mt-7 grid grid-cols-[1fr_74px] items-end gap-3">
+          <div className="relative z-10 mt-[230px] grid grid-cols-[1fr_74px] items-end gap-3">
             <div>
               <p className="mg-display text-[10px] uppercase tracking-[0.28em] text-[var(--mg-sand)]">A good choice, {firstName}</p>
               <h1 className="mg-display mt-2 text-[45px] uppercase leading-[0.83] tracking-[-0.06em]">WELL<br />WORN.<br /><span className="text-[var(--mg-sand)]">WELL</span><br />LOVED.</h1>
@@ -1491,7 +1516,7 @@ function ReceiptView({
               <span className={`${m} text-[8px] uppercase leading-tight text-white/70`}>Your<br />purchase<br />record</span>
             </div>
           </div>
-          <div className="mt-6 flex items-center justify-between border-t border-white/25 pt-3 text-[10px] uppercase tracking-[0.13em] text-white/70">
+          <div className="relative z-10 mt-6 flex items-center justify-between border-t border-white/25 pt-3 text-[10px] uppercase tracking-[0.13em] text-white/70">
             <span>{store.name.replace(/^Mango\s*/i, "")}</span><span>{data.date.split(" ")[0]}</span>
           </div>
           <span aria-hidden="true" className="pointer-events-none absolute -right-14 top-[105px] h-44 w-44 rounded-full border-[1px] border-white/15" />
@@ -1564,6 +1589,40 @@ function ReceiptView({
         <div className="space-y-6 px-5 pt-4">
           <SleekRateCard data={data} onSubmit={onSubmitFeedback} />
           <VideoCard />
+
+          {/* Editorial campaign interlude — imagery is optional while assets are being prepared. */}
+          <section aria-label="Discover the collection" className="relative min-h-[430px] overflow-hidden bg-[var(--mg-ink)] text-white">
+            <img
+              src={NEW_ARRIVALS_IMAGE}
+              alt="Mango new season fashion campaign"
+              className="absolute inset-0 h-full w-full object-cover"
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-black/10" />
+            <div className="relative flex min-h-[430px] flex-col items-start justify-end p-5">
+              <span className="text-[9px] uppercase tracking-[.24em] text-white/75">The new season</span>
+              <h2 className="mg-display mt-3 max-w-[280px] text-[42px] uppercase leading-[.88] tracking-[-.055em]">Discover<br />what’s next.</h2>
+              <p className="mt-3 max-w-[230px] text-[12px] leading-relaxed text-white/85">New arrivals, considered details, and pieces made to move with you.</p>
+              <a href={storeLocatorUrl} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-5 bg-[var(--mg-canvas)] px-4 py-3 text-[10px] font-bold uppercase tracking-[.13em] text-[var(--mg-ink)]">Explore the collection <span aria-hidden="true">↗</span></a>
+            </div>
+          </section>
+
+          <section aria-label="Conscious fashion" className="relative min-h-[300px] overflow-hidden bg-[var(--mg-sand)] text-[var(--mg-ink)]">
+            <img
+              src={SUSTAINABILITY_IMAGE}
+              alt="Natural textures from the Mango conscious collection"
+              className="absolute inset-0 h-full w-full object-cover"
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-[var(--mg-canvas)]/95 via-[var(--mg-canvas)]/75 to-transparent" />
+            <div className="relative max-w-[260px] p-5 py-8">
+              <span className="text-[9px] uppercase tracking-[.22em]">A thoughtful choice</span>
+              <h2 className="mg-display mt-3 text-[32px] uppercase leading-[.9] tracking-[-.04em]">A more<br />responsible<br />tomorrow.</h2>
+              <p className="mt-3 text-[12px] leading-relaxed">Thank you for being part of a more conscious fashion future.</p>
+              <a href={storeLocatorUrl} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-3 border-b border-[var(--mg-ink)] pb-1 text-[10px] font-bold uppercase tracking-[.12em]">Discover our commitment <span aria-hidden="true">→</span></a>
+            </div>
+          </section>
+
           {club && <CouponsSection coupons={club.coupons} />}
           {club && <TierCard club={club} mobile={data.customer.mobile} sectionRef={clubRef} />}
           <ProfileCard data={data} onSave={onSaveProfile} />
@@ -1584,6 +1643,12 @@ function ReceiptView({
           </section>
 
           <section aria-label="Store" className="border-t-2 border-[var(--mg-ink)] bg-white px-4 py-4 text-[var(--mg-ink)]">
+            <img
+              src={STORE_IMAGE}
+              alt={`${store.name} storefront`}
+              className="mb-4 h-[190px] w-full object-cover"
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
+            />
             <div className="flex items-start justify-between gap-3"><div><p className="mg-display text-[9px] uppercase tracking-[0.22em] text-[var(--mg-brown)]">The place</p><h2 className="mg-display mt-1 text-[18px] uppercase leading-tight">{store.name}</h2></div><Icon name="store" className="h-6 w-6 shrink-0 text-[var(--mg-brown)]" /></div>
             <p className="mt-3 text-[12px] leading-relaxed">{store.address}</p>
             <div className={`${m} mt-3 grid grid-cols-2 gap-2 border-t border-[var(--mg-line)] pt-3 text-[9px]`}><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${store.name}, ${store.address}`)}`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">GET DIRECTIONS ↗</a><a href={`tel:${store.phone}`} className="text-right underline underline-offset-2">CALL STORE ↗</a></div>
@@ -1591,11 +1656,21 @@ function ReceiptView({
             <Collapse open={contactOpen} id={contactId}><div className={`${m} mt-3 space-y-2 border-t border-dashed border-[var(--mg-line)] pt-3 text-[10px] leading-relaxed text-[var(--mg-brown)]`}><p>Email: <a href={`mailto:${store.email}`} className="font-bold text-[var(--mg-ink)] underline">{store.email}</a></p><p>Phone: <a href={`tel:${store.phone}`} className="font-bold text-[var(--mg-ink)] underline">{store.phone}</a></p><p>Associate: <strong className="text-[var(--mg-ink)]">{store.associate}</strong></p><p>GSTIN: <strong className="text-[var(--mg-ink)]">{store.gstin}</strong></p><p>Registered office: {data.registeredOffice}</p></div></Collapse>
           </section>
 
-          <section className="bg-[var(--mg-ink)] p-5 text-white">
+          <section className="relative overflow-hidden bg-[var(--mg-ink)] p-5 text-white">
+            <img
+              src={CAMPAIGN_HERO_IMAGE}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 h-full w-full object-cover opacity-30"
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/65 to-black/20" />
+            <div className="relative">
             <BrandImage src={logoSrc} alt="MANGO" width={320} height={80} className="h-7 w-auto max-w-[55%] object-contain object-left brightness-0 invert" fallbackClassName="mg-display text-[22px] uppercase tracking-[0.12em] text-white" />
             <p className="mg-display mt-7 text-[34px] uppercase leading-[0.9] tracking-[-0.05em]">See you<br /><span className="text-[var(--mg-sand)]">in style.</span></p>
             <p className="mt-3 text-[12px] text-white/65">Thank you for making this piece part of your story.</p>
             <div className={`${m} mt-5 border-t border-white/25 pt-3 text-[9px] leading-relaxed text-white/55`}>REGISTERED OFFICE<br /><span className="text-white/80">{data.registeredOffice}</span><div className="mt-3 flex items-center justify-between gap-2 border-t border-white/20 pt-3"><span>INVOICE {data.invoiceNo}</span><button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="font-bold text-[var(--mg-sand)] underline underline-offset-2">BACK TO TOP ↑</button></div></div>
+            </div>
           </section>
         </div>
         <footer className="mt-6 flex items-center justify-center gap-2 border-t border-[var(--mg-line)] bg-white px-5 py-4 text-[11px] text-[var(--mg-brown)]"><span>Made smarter with</span><BrandImage src={rdepLogoSrc} alt="rdep" width={240} height={80} className="h-6 w-auto" fallbackClassName="text-base font-bold tracking-tight text-[var(--mg-ink)]" /></footer>
