@@ -3,10 +3,12 @@
 /**
  * Mango x RDEP — Smart receipt
  *
- * Concept: fashion-editorial receipt archive. Oversized typographic masthead, transaction-first
- * hierarchy, numbered lookbook-style line items, warm brown/sand accents and sharp magazine rules.
- * Keeps Mango palette and receipt actions while moving away from generic rounded dashboard cards.
+ * Concept: fashion-editorial receipt archive. Warm brown/sand accents, sharp magazine rules and
+ * one consistent card language (rounded-3xl cards, rounded-2xl inner blocks and buttons).
  * Popups are light rounded sheets.
+ *
+ * Section order: header, feedback, purchase (you paid), selection + totals + History/Email/Download,
+ * video, Mango Club tier, coupons, profile, discover, exchange, reach us, store, sign-off, powered by.
  *
  * Phone first: hover styles only apply on devices that can hover; on touch every button and link
  * dips while pressed and uses `active:` colours.
@@ -99,6 +101,10 @@ const NEW_ARRIVALS_IMAGE = "/images/design-mode/mango-new-arrivals.png";
 const STORE_IMAGE = "/images/design-mode/mango-storefront.png";
 const DEFAULT_INSTAGRAM_URL = "https://www.instagram.com/mango/";
 const DEFAULT_STORE_LOCATOR_URL = "https://shop.mango.com/in";
+
+/* Header hero image is shown at its full width with no cropping. If it is taller than this (px at the
+ * 400px design width) it is scaled down to fit instead of being cut. Lower it for a shorter header. */
+const HERO_MAX_H = 260;
 
 /* Marketing video: https://youtu.be/NOWWhR1JlGQ */
 const MARKETING_VIDEO_ID = "NOWWhR1JlGQ";
@@ -198,7 +204,7 @@ type IconName =
   | "history" | "mail" | "download" | "phone" | "instagram" | "pin" | "store"
   | "close" | "check" | "arrow" | "chevron" | "user" | "tax" | "directions" | "call"
   | "star" | "ticket";
-type ModalId = "history" | "email" | "qr" | null;
+type ModalId = "history" | "email" | null;
 
 interface HistoryRow {
   invoiceNo: string;
@@ -515,8 +521,8 @@ const lift = "border border-black/5 shadow-[0_10px_28px_-14px_rgba(26,26,26,0.35
 const fieldInput =
   "w-full rounded-none border-0 border-b-2 border-[var(--mg-edge)] bg-transparent px-0 py-2.5 text-base text-[var(--mg-ink)] outline-none transition-colors [-webkit-appearance:none] [appearance:none] placeholder:text-[var(--mg-brown)] focus:border-[var(--mg-ink)]";
 const fieldLabel = "mb-1 block text-[13px] text-[var(--mg-brown)]";
-const solidBtn = `flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--mg-ink)] py-4 text-[13px] font-bold uppercase tracking-[0.12em] text-white transition-colors active:bg-[var(--mg-brown)] [@media(hover:hover)]:hover:bg-[var(--mg-brown)] motion-reduce:transition-none ${onPaper}`;
-const outlineBtn = `flex items-center justify-center gap-2 rounded-xl border-2 border-[var(--mg-ink)] bg-white py-4 text-[13px] font-bold uppercase tracking-[0.08em] text-[var(--mg-ink)] transition-colors active:border-[var(--mg-ink)] [@media(hover:hover)]:hover:border-[var(--mg-ink)] active:bg-[var(--mg-ink)] [@media(hover:hover)]:hover:bg-[var(--mg-ink)] active:text-white [@media(hover:hover)]:hover:text-white motion-reduce:transition-none ${onPaper}`;
+const solidBtn = `flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--mg-ink)] py-4 text-[13px] font-bold uppercase tracking-[0.12em] text-white transition-colors active:bg-[var(--mg-brown)] [@media(hover:hover)]:hover:bg-[var(--mg-brown)] motion-reduce:transition-none ${onPaper}`;
+const outlineBtn = `flex items-center justify-center gap-2 rounded-2xl border-2 border-[var(--mg-ink)] bg-white py-4 text-[13px] font-bold uppercase tracking-[0.08em] text-[var(--mg-ink)] transition-colors active:border-[var(--mg-ink)] [@media(hover:hover)]:hover:border-[var(--mg-ink)] active:bg-[var(--mg-ink)] [@media(hover:hover)]:hover:bg-[var(--mg-ink)] active:text-white [@media(hover:hover)]:hover:text-white motion-reduce:transition-none ${onPaper}`;
 
 const DESIGN_W = 400;
 const PHONE_MAX = 520;
@@ -539,7 +545,7 @@ function useFitScale(): number {
   }, []);
   return scale;
 }
-const zoomStyle = (scale: number): CSSProperties | undefined => (scale === 1 ? undefined : ({ zoom: scale } as CSSProperties));
+const zoomStyle = (scale: number): CSSProperties | undefined => (scale === 1 ? undefined : ({ zoom: scale } as CSSProperty));
 
 /** True while the element is inside the viewport (expanded by `rootMargin`, needs `threshold` visible). */
 function useInView<T extends Element>(ref: RefObject<T | null>, rootMargin: string, threshold: number): boolean {
@@ -606,20 +612,6 @@ function Collapse({ open, id, children }: { open: boolean; id: string; children:
   );
 }
 
-function ZigZag({ down = false }: { down?: boolean }) {
-  const id = useId().replace(/:/g, "");
-  return (
-    <svg aria-hidden="true" className="block h-2.5 w-full">
-      <defs>
-        <pattern id={id} width="16" height="10" patternUnits="userSpaceOnUse">
-          <path d={down ? "M0 0 L8 10 L16 0 Z" : "M0 10 L8 0 L16 10 Z"} fill="#fff" />
-        </pattern>
-      </defs>
-      <rect width="100%" height="10" fill={`url(#${id})`} />
-    </svg>
-  );
-}
-
 function Heading({ children, sub, size = 22 }: { children: ReactNode; sub?: string; size?: number }) {
   return (
     <div>
@@ -628,6 +620,36 @@ function Heading({ children, sub, size = 22 }: { children: ReactNode; sub?: stri
       </h2>
       <span aria-hidden="true" className="mt-2.5 block h-1 w-10 rounded-full bg-[var(--mg-brown)]" />
       {sub && <p className="mt-2.5 text-[14px] leading-snug text-[var(--mg-brown)]">{sub}</p>}
+    </div>
+  );
+}
+
+/** Three equal rounded tiles (icon over label). Used for History / Email / Download and Instagram / Call / Email. */
+interface ActionItem {
+  key: string;
+  icon: IconName;
+  label: string;
+  onClick?: () => void;
+  href?: string;
+  external?: boolean;
+}
+function ActionGrid({ items, className = "" }: { items: ActionItem[]; className?: string }) {
+  const tile = `flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-black/10 bg-white py-3.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--mg-ink)] active:bg-[var(--mg-sand)] [@media(hover:hover)]:hover:bg-[var(--mg-sand)] ${onPaper}`;
+  return (
+    <div className={`grid grid-cols-3 gap-2 ${className}`}>
+      {items.map((a) =>
+        a.href ? (
+          <a key={a.key} href={a.href} target={a.external ? "_blank" : undefined} rel={a.external ? "noopener noreferrer" : undefined} className={tile}>
+            <Icon name={a.icon} className="h-5 w-5 text-[var(--mg-brown)]" />
+            {a.label}
+          </a>
+        ) : (
+          <button key={a.key} type="button" onClick={a.onClick} className={tile}>
+            <Icon name={a.icon} className="h-5 w-5 text-[var(--mg-brown)]" />
+            {a.label}
+          </button>
+        ),
+      )}
     </div>
   );
 }
@@ -674,7 +696,7 @@ function Modal({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="mg-root max-h-[88vh] w-full overflow-y-auto rounded-t-[32px] bg-white outline-none sm:w-[400px] sm:rounded-[32px]"
+        className="mg-root max-h-[88vh] w-full overflow-y-auto rounded-t-3xl bg-white outline-none sm:w-[400px] sm:rounded-3xl"
       >
         <div className="w-full sm:w-[400px]" style={zoomStyle(scale)}>
           <div className="p-6 text-[var(--mg-brown)]">
@@ -699,71 +721,6 @@ function Modal({
         </div>
       </div>
     </div>
-  );
-}
-
-/* ------------------------------ paper item row ----------------------------------- */
-function PaperItem({ item, open, onToggle }: { item: MangoItem; open: boolean; onToggle: () => void }) {
-  const panelId = useId();
-  const m = monoClass;
-  const net = netOf(item);
-  const gross = item.mrp * item.qty;
-  const pct = gross > 0 ? (item.discount / gross) * 100 : 0;
-  return (
-    <li className="border-b border-dashed border-black/40 py-3.5 last:border-b-0">
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={open}
-        aria-controls={panelId}
-        className={`grid w-full grid-cols-[auto_minmax(0,1fr)_auto] gap-x-2.5 rounded text-left ${onPaper}`}
-      >
-        <span aria-hidden="true" className={`${m} text-[13px] font-bold leading-snug text-[var(--mg-brown)]`}>
-          [{open ? "−" : "+"}]
-        </span>
-        <span className="min-w-0">
-          <span className={`${m} block text-[13px] font-semibold uppercase leading-snug text-[var(--mg-ink)]`}>{item.name}</span>
-          <span className={`${m} mt-1 block text-xs text-[var(--mg-brown)]`}>
-            SIZE {item.size} &nbsp; QTY {item.qty} &nbsp; MRP {item.mrp.toLocaleString("en-IN")}
-          </span>
-        </span>
-        <span className={`${m} text-sm font-bold leading-snug tabular-nums text-[var(--mg-ink)]`}>{inr(net)}</span>
-      </button>
-
-      <Collapse open={open} id={panelId}>
-        <div className={`${m} ml-8 mt-3 space-y-2.5 border-l-2 border-[var(--mg-brown)] pl-3 text-xs`}>
-          <dl className="flex items-baseline justify-between gap-3">
-            <dt className="text-[var(--mg-brown)]">SKU</dt>
-            <dd className="text-[13px] font-bold tracking-wide text-[var(--mg-ink)]">{item.sku}</dd>
-          </dl>
-
-          <dl className="grid grid-cols-2 divide-x divide-black/15 rounded-md border border-black/15">
-            {(
-              [
-                ["HSN", item.hsn],
-                ["UoM", "Pcs"],
-              ] as [string, string][]
-            ).map(([k, v]) => (
-              <div key={k} className="min-w-0 px-1.5 py-1.5">
-                <dt className="text-[var(--mg-brown)]">{k}</dt>
-                <dd className="mt-0.5 break-words font-bold tabular-nums text-[var(--mg-ink)]">{v}</dd>
-              </div>
-            ))}
-          </dl>
-
-          <dl className="grid grid-cols-2 gap-2">
-            <div className="rounded-md bg-[var(--mg-wash)] px-2.5 py-1.5 text-[var(--mg-brown-dark)]">
-              <dt>Discount %</dt>
-              <dd className="mt-0.5 text-[13px] font-bold tabular-nums">{trim(pct)}</dd>
-            </div>
-            <div className="rounded-md bg-[var(--mg-wash)] px-2.5 py-1.5 text-[var(--mg-brown-dark)]">
-              <dt>Discount amount</dt>
-              <dd className="mt-0.5 text-[13px] font-bold tabular-nums">{trim(item.discount)}</dd>
-            </div>
-          </dl>
-        </div>
-      </Collapse>
-    </li>
   );
 }
 
@@ -802,7 +759,7 @@ function SleekRateCard({ data, onSubmit }: { data: MangoReceiptData; onSubmit?: 
   return (
     <section
       aria-label="Rate your visit"
-      className="relative overflow-hidden rounded-2xl border border-black/[0.06] bg-white p-4 text-[var(--mg-brown)] shadow-[0_10px_28px_-14px_rgba(26,26,26,0.35)]"
+      className="relative overflow-hidden rounded-3xl border border-black/[0.06] bg-white p-4 text-[var(--mg-brown)] shadow-[0_10px_28px_-14px_rgba(26,26,26,0.35)]"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
@@ -815,7 +772,7 @@ function SleekRateCard({ data, onSubmit }: { data: MangoReceiptData; onSubmit?: 
       </div>
 
       {submitted ? (
-        <div className="mt-3 flex items-start gap-2.5 rounded-xl border border-black/5 bg-[var(--mg-wash)] p-3" aria-live="polite">
+        <div className="mt-3 flex items-start gap-2.5 rounded-2xl border border-black/5 bg-[var(--mg-wash)] p-3" aria-live="polite">
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--mg-ink)] text-white">
             <Icon name="check" className="h-4 w-4" />
           </span>
@@ -878,7 +835,7 @@ function SleekRateCard({ data, onSubmit }: { data: MangoReceiptData; onSubmit?: 
                 <p className={`${m} mb-2.5 text-[11px] font-bold uppercase tracking-wider text-[var(--mg-brown)]`}>Rate specific categories</p>
                 <div className="space-y-2">
                   {FEEDBACK_CATEGORIES.map((c) => (
-                    <div key={c.key} className="flex items-center justify-between rounded-xl border border-black/5 bg-[var(--mg-wash)] px-3 py-2">
+                    <div key={c.key} className="flex items-center justify-between rounded-2xl border border-black/5 bg-[var(--mg-wash)] px-3 py-2">
                       <span className={`${m} text-[11px] font-semibold uppercase text-[var(--mg-ink)]`}>{c.label}</span>
                       <div className="flex gap-0.5">
                         {[1, 2, 3, 4, 5].map((star) => (
@@ -925,7 +882,7 @@ function SleekRateCard({ data, onSubmit }: { data: MangoReceiptData; onSubmit?: 
                 <button
                   type="button"
                   onClick={() => setExpanded(false)}
-                  className="rounded-xl border border-black/10 bg-[var(--mg-wash)] px-4 py-3 text-[12px] font-bold uppercase tracking-wider text-[var(--mg-brown)] active:bg-[var(--mg-press)]"
+                  className="rounded-2xl border border-black/10 bg-[var(--mg-wash)] px-4 py-3 text-[12px] font-bold uppercase tracking-wider text-[var(--mg-brown)] active:bg-[var(--mg-press)]"
                 >
                   Cancel
                 </button>
@@ -972,7 +929,7 @@ function VideoCard() {
 
   return (
     <section ref={sectionRef} aria-label="Mango video">
-      <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-[var(--mg-ink)] shadow-[0_12px_28px_-18px_rgba(26,26,26,.5)]">
+      <div className="relative aspect-video w-full overflow-hidden rounded-3xl bg-[var(--mg-ink)] shadow-[0_12px_28px_-18px_rgba(26,26,26,.5)]">
         {mounted && (
           <iframe
             ref={frameRef}
@@ -1156,7 +1113,7 @@ function CouponsSection({ coupons }: { coupons: MangoCoupon[] }) {
                 drag.current.moved = false;
               }
             }}
-            className={`relative -mx-4 mt-3 flex select-none gap-3 overflow-x-auto overscroll-x-contain px-4 pb-4 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+            className={`relative -mx-5 mt-3 flex select-none gap-3 overflow-x-auto overscroll-x-contain px-5 pb-4 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
               dragging ? "cursor-grabbing snap-none" : "cursor-grab snap-x snap-mandatory"
             }`}
           >
@@ -1445,6 +1402,7 @@ function ReceiptView({
   const [modal, setModal] = useState<ModalId>(null);
   const [exchangeOpen, setExchangeOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const [heroFailed, setHeroFailed] = useState(false);
   const [email, setEmail] = useState("");
   const [sentTo, setSentTo] = useState("");
   const [emailErr, setEmailErr] = useState("");
@@ -1458,8 +1416,6 @@ function ReceiptView({
   const { store, exchange, club } = data;
   const t = useMemo(() => totalsOf(data), [data]);
   const firstName = data.customer.name.trim().split(/\s+/)[0] || data.customer.name;
-  const nameSize = Math.min(38, Math.max(24, Math.floor(330 / (0.72 * (firstName.length + 1)))));
-  const tier = club ? TIERS.find((x) => x.name === club.tier) ?? TIERS[0] : null;
   const handleDownload = () => (onDownload ? onDownload(data) : downloadReceipt(data, logoSrc, rdepLogoSrc));
 
   return (
@@ -1474,103 +1430,191 @@ function ReceiptView({
         style={zoomStyle(scale)}
         className="mx-auto w-[400px] overflow-hidden bg-[var(--mg-canvas)] pb-0 sm:shadow-[0_24px_60px_-24px_rgba(26,26,26,0.3)]"
       >
-        {/* MANGO / receipt as a fashion-editorial object, not a stack of cards */}
-        <header
-          className="relative h-[430px] overflow-hidden rounded-b-[28px] bg-[var(--mg-ink)] px-5 pb-5 pt-5 text-white"
-          style={{
-            backgroundImage: `linear-gradient(180deg, rgba(15,13,12,.25) 0%, rgba(15,13,12,.08) 27%, rgba(15,13,12,.88) 72%, rgba(15,13,12,1) 100%), url(${CAMPAIGN_HERO_IMAGE})`,
-            backgroundSize: "100% auto",
-            backgroundPosition: "center top",
-            backgroundRepeat: "no-repeat",
-          }}
-        >
-          <div className="relative z-10 flex items-center justify-between border-b border-white/30 pb-4">
-
-            <BrandImage src={logoSrc} alt="MANGO" width={320} height={80} priority className="h-7 w-auto max-w-[48%] object-contain object-left brightness-0 invert" fallbackClassName="mg-display text-[25px] uppercase tracking-[0.12em] text-white" />
+        {/* Compact header: logo row, full uncropped campaign image, then the thank-you message */}
+        <header className="relative overflow-hidden rounded-b-3xl bg-[var(--mg-ink)] text-white">
+          <div className="relative z-10 flex items-center justify-between px-5 pb-3 pt-5">
+            <BrandImage
+              src={logoSrc}
+              alt="MANGO"
+              width={320}
+              height={80}
+              priority
+              className="h-7 w-auto max-w-[48%] object-contain object-left brightness-0 invert"
+              fallbackClassName="mg-display text-[25px] uppercase tracking-[0.12em] text-white"
+            />
             <span className={`${m} text-[9px] uppercase tracking-[0.16em] text-white/65`}>{store.name.replace(/^Mango\s*/i, "")}</span>
           </div>
-          <div className="relative z-10 mt-[205px] max-w-[300px]">
+
+          {!heroFailed && (
+            <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={CAMPAIGN_HERO_IMAGE}
+                alt=""
+                aria-hidden="true"
+                className="block h-auto w-full object-contain"
+                style={{ maxHeight: HERO_MAX_H }}
+                onError={() => setHeroFailed(true)}
+              />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 top-0 h-8"
+                style={{ backgroundImage: "linear-gradient(to bottom, #1A1A1A, rgba(26,26,26,0))" }}
+              />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-24"
+                style={{ backgroundImage: "linear-gradient(to top, #1A1A1A, rgba(26,26,26,0))" }}
+              />
+            </div>
+          )}
+
+          <div className={`relative z-10 px-5 pb-5 ${heroFailed ? "pt-1" : "-mt-12"}`}>
             <p className="mg-display text-[10px] uppercase tracking-[0.28em] text-[var(--mg-sand)]">A good choice, {firstName}</p>
-            <h1 className="mg-display mt-2 text-[42px] uppercase leading-[0.9] tracking-[-0.055em]">Thank you.</h1>
-            <p className="mt-3 max-w-[220px] text-[12px] leading-relaxed text-white/85">Your style makes a difference.</p>
+            <h1 className="mg-display mt-1.5 text-[38px] uppercase leading-[0.9] tracking-[-0.055em]">Thank you.</h1>
+            <p className="mt-2 text-[12px] leading-relaxed text-white/85">Your style makes a difference.</p>
+            <div className="mt-4 flex items-center justify-between rounded-full border border-white/25 px-4 py-2 text-[10px] uppercase tracking-[0.13em] text-white/80">
+              <span>{store.name.replace(/^Mango\s*/i, "")}</span>
+              <span>{data.date.split(" ")[0]}</span>
+            </div>
           </div>
-          <div className="relative z-10 mt-5 flex items-center justify-between rounded-full border border-white/25 px-4 py-2 text-[10px] uppercase tracking-[0.13em] text-white/80">
-            <span>{store.name.replace(/^Mango\s*/i, "")}</span><span>{data.date.split(" ")[0]}</span>
-          </div>
-          <span aria-hidden="true" className="pointer-events-none absolute -right-14 top-[105px] h-44 w-44 rounded-full border-[1px] border-white/15" />
-          <span aria-hidden="true" className="pointer-events-none absolute -right-8 top-[135px] h-32 w-32 rounded-full border-[16px] border-white/[0.04]" />
         </header>
 
-        {/* The transaction is the hero. All essential details appear immediately. */}
-        <section aria-label="Purchase overview" className="px-5 pt-5">
-          <div className="flex items-start justify-between gap-3 border-b-2 border-[var(--mg-ink)] pb-4">
-            <div>
-              <p className="mg-display text-[10px] uppercase tracking-[0.2em] text-[var(--mg-brown)]">You paid</p>
-              <p className="mg-display mt-1 text-[43px] leading-none tracking-[-0.055em] text-[var(--mg-ink)]">₹{inr(t.total)}</p>
-              {t.discount > 0 && <p className="mt-2 inline-block bg-[var(--mg-sand)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--mg-ink)]">You saved ₹{inr(t.discount)}</p>}
-            </div>
-            <button type="button" onClick={() => setModal("qr")} aria-label="View QR code" className="group flex w-[76px] shrink-0 flex-col items-center rounded-2xl border border-[var(--mg-ink)] bg-white p-2 text-[var(--mg-ink)] active:bg-[var(--mg-sand)]">
-              <div className="h-12 w-12 overflow-hidden bg-white">{qrSrc ? <img src={qrSrc} alt="Receipt QR code" className="h-full w-full object-contain" /> : <PlaceholderQR seed={data.invoiceNo} />}</div>
-              <span className="mg-display mt-1 text-[8px] uppercase tracking-[0.12em]">Scan receipt</span>
-            </button>
-          </div>
-          <div className={`${m} grid grid-cols-2 gap-0 border-b border-[var(--mg-edge)] py-3 text-[10px] text-[var(--mg-ink)]`}>
-            <div className="border-r border-[var(--mg-line)] pr-3"><span className="mb-1 block text-[9px] uppercase tracking-[0.12em] text-[var(--mg-brown)]">Invoice</span><span className="break-all font-bold">{data.invoiceNo}</span></div>
-            <div className="pl-3"><span className="mb-1 block text-[9px] uppercase tracking-[0.12em] text-[var(--mg-brown)]">Payment</span><span className="font-bold">{data.payment.mode}</span><span className="mt-0.5 block break-all text-[9px] text-[var(--mg-brown)]">{data.payment.ref}</span></div>
-          </div>
-        </section>
-
-        {/* Receipt items presented like a numbered lookbook */}
-        <section aria-label="Purchase summary" className="px-5 pt-6 text-[var(--mg-ink)]">
-          <div className="mb-4 flex items-end justify-between gap-2">
-            <div><p className="mg-display text-[9px] uppercase tracking-[0.25em] text-[var(--mg-brown)]">The details</p><h2 className="mg-display mt-1 text-[27px] uppercase leading-none tracking-[-0.04em]">Your selection<span className="text-[var(--mg-brown)]">.</span></h2></div>
-            <span className={`${m} pb-1 text-[10px] text-[var(--mg-brown)]`}>{String(t.pieces).padStart(2, "0")} {t.pieces === 1 ? "ITEM" : "ITEMS"}</span>
-          </div>
-          <div className="border-y-2 border-[var(--mg-ink)]">
-            {data.items.map((item, i) => {
-              const net = Math.max(0, item.mrp * item.qty - item.discount);
-              return <article key={`${item.sku}-${i}`} className={`grid grid-cols-[1fr_auto] gap-3 rounded-2xl px-3 py-4 ${i ? "mt-2 border-t border-[var(--mg-line)]" : ""}`}>
-                <div className="flex h-[54px] items-center justify-center rounded-xl bg-[var(--mg-sand)] text-[var(--mg-brown)]"><span className="mg-display text-[10px] uppercase tracking-[0.12em]">Item</span></div>
-                <div className="min-w-0">
-                  <h3 className="mg-display text-[13px] uppercase leading-[1.15] tracking-[0.015em]">{item.name}</h3>
-                  <p className={`${m} mt-1.5 text-[9px] uppercase leading-relaxed text-[var(--mg-brown)]`}>Size {item.size} · Qty {item.qty}</p>
-                  <button type="button" onClick={() => setOpenItem(openItem === i ? -1 : i)} aria-expanded={openItem === i} className="mt-1 text-[10px] font-bold underline decoration-[var(--mg-brown)] underline-offset-2">{openItem === i ? "Hide item info" : "Item information"}</button>
-                  {openItem === i && <div className={`${m} mt-2 border-l-2 border-[var(--mg-brown)] pl-2 text-[9px] leading-relaxed text-[var(--mg-brown)]`}>SKU: {item.sku}<br />HSN: {item.hsn}<br />MRP: ₹{inr(item.mrp)} · Discount: ₹{inr(item.discount)}</div>}
-                </div>
-                <div className="text-right"><span className="mg-display block text-[13px] tabular-nums">₹{inr(net)}</span>{item.discount > 0 && <span className={`${m} mt-1 block text-[9px] text-[var(--mg-brown)] line-through`}>₹{inr(item.mrp * item.qty)}</span>}</div>
-              </article>;
-            })}
-          </div>
-          <dl className={`${m} space-y-2 py-4 text-[11px] text-[var(--mg-ink)]`}>
-            <Leader label="Subtotal (MRP)" value={`₹${inr(t.subtotal)}`} />
-            <Leader label="Discount" value={`− ₹${inr(t.discount)}`} />
-            <Leader label="SGST" value={`₹${inr(data.sgst)}`} />
-            <Leader label="CGST" value={`₹${inr(data.cgst)}`} />
-          </dl>
-          <div className="relative overflow-hidden rounded-2xl bg-[var(--mg-sand)] p-4 text-[var(--mg-ink)]">
-            <span aria-hidden="true" className="pointer-events-none absolute -right-5 -top-7 h-24 w-24 rounded-full border-[10px] border-black/[0.06]" />
-            <div className="relative flex items-end justify-between gap-2"><div><p className="mg-display text-[9px] uppercase tracking-[0.22em]">Final total</p><p className="mt-1 text-[10px]">Inclusive of applicable taxes</p></div><p className="mg-display text-[29px] leading-none tracking-[-0.04em]">₹{inr(t.total)}</p></div>
-          </div>
-          <div className="mt-4 grid grid-cols-3 border-y border-[var(--mg-edge)]">
-            {([
-              { icon: "history", label: "History", onClick: () => setModal("history") },
-              { icon: "mail", label: "Email", onClick: () => setModal("email") },
-              { icon: "download", label: "Download", onClick: handleDownload },
-            ] as { icon: IconName; label: string; onClick: () => void }[]).map((a, i) => <button key={a.label} type="button" onClick={a.onClick} className={`flex items-center justify-center gap-1.5 py-3 text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--mg-ink)] active:bg-[var(--mg-sand)] ${i ? "border-l border-[var(--mg-line)]" : ""}`}><Icon name={a.icon} className="h-4 w-4 text-[var(--mg-brown)]" />{a.label}</button>)}
-          </div>
-        </section>
-
-        {/* A short pause between transaction and brand experience */}
-        <div className="mx-5 mt-7 border-t border-[var(--mg-ink)] pt-3">
-          <div className="flex items-center justify-between"><p className="mg-display text-[10px] uppercase tracking-[0.22em] text-[var(--mg-brown)]">After the purchase</p><span className={`${m} text-[9px] text-[var(--mg-brown)]`}>MANGO / CLUB</span></div>
-        </div>
-        <div className="space-y-6 px-5 pt-4">
-          {club && <TierCard club={club} mobile={data.customer.mobile} sectionRef={clubRef} />}
-          {club && <CouponsSection coupons={club.coupons} />}
+        <div className="space-y-6 px-5 pb-0 pt-5">
+          {/* 1. Feedback sits right under the header */}
           <SleekRateCard data={data} onSubmit={onSubmitFeedback} />
 
-          {/* Editorial campaign interlude — imagery is optional while assets are being prepared. */}
-          <section aria-label="Discover the collection" className="relative min-h-[430px] overflow-hidden rounded-[26px] bg-[var(--mg-ink)] text-white">
+          {/* 2. Purchase overview: amount paid, QR (display only), invoice and payment */}
+          <section aria-label="Purchase overview" className={`rounded-3xl bg-white p-5 text-[var(--mg-ink)] ${lift}`}>
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="mg-display text-[10px] uppercase tracking-[0.2em] text-[var(--mg-brown)]">You paid</p>
+                <p className="mg-display mt-1.5 text-[36px] leading-none tracking-[-0.05em]">₹{inr(t.total)}</p>
+                {t.discount > 0 && (
+                  <p className="mg-display mt-3 inline-block rounded-full bg-[var(--mg-sand)] px-3 py-1 text-[10px] uppercase tracking-[0.08em]">
+                    You saved ₹{inr(t.discount)}
+                  </p>
+                )}
+              </div>
+              <div className="h-[92px] w-[92px] shrink-0 overflow-hidden rounded-2xl border border-black/10 bg-white p-1.5">
+                {qrSrc ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={qrSrc} alt="Receipt QR code" className="h-full w-full object-contain" />
+                ) : (
+                  <PlaceholderQR seed={data.invoiceNo} />
+                )}
+              </div>
+            </div>
+
+            <dl className={`${m} mt-4 grid grid-cols-2 gap-2 text-[10px]`}>
+              <div className="min-w-0 rounded-2xl bg-[var(--mg-wash)] px-3 py-2.5">
+                <dt className="text-[9px] uppercase tracking-[0.12em] text-[var(--mg-brown)]">Invoice</dt>
+                <dd className="mt-1 break-all font-bold">{data.invoiceNo}</dd>
+              </div>
+              <div className="min-w-0 rounded-2xl bg-[var(--mg-wash)] px-3 py-2.5">
+                <dt className="text-[9px] uppercase tracking-[0.12em] text-[var(--mg-brown)]">Payment</dt>
+                <dd className="mt-1 font-bold">
+                  {data.payment.mode}
+                  <span className="mt-0.5 block break-all text-[9px] font-normal text-[var(--mg-brown)]">{data.payment.ref}</span>
+                </dd>
+              </div>
+            </dl>
+          </section>
+
+          {/* 3. Selection, totals and History / Email / Download */}
+          <section aria-label="Purchase summary" className={`rounded-3xl bg-white p-5 text-[var(--mg-ink)] ${lift}`}>
+            <div className="flex items-end justify-between gap-2">
+              <div>
+                <p className="mg-display text-[9px] uppercase tracking-[0.25em] text-[var(--mg-brown)]">The details</p>
+                <h2 className="mg-display mt-1 text-[24px] uppercase leading-none tracking-[-0.04em]">
+                  Your selection<span className="text-[var(--mg-brown)]">.</span>
+                </h2>
+              </div>
+              <span className={`${m} rounded-full bg-[var(--mg-wash)] px-3 py-1 text-[10px] text-[var(--mg-brown)]`}>
+                {String(t.pieces).padStart(2, "0")} {t.pieces === 1 ? "ITEM" : "ITEMS"}
+              </span>
+            </div>
+
+            <ul className="mt-4 divide-y divide-dashed divide-black/15 rounded-2xl bg-[var(--mg-wash)] px-4">
+              {data.items.map((item, i) => {
+                const net = Math.max(0, item.mrp * item.qty - item.discount);
+                const open = openItem === i;
+                return (
+                  <li key={`${item.sku}-${i}`} className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 py-3.5">
+                    <div className="min-w-0">
+                      <p className={`${m} text-[9px] tracking-[0.14em] text-[var(--mg-brown)]`}>{String(i + 1).padStart(2, "0")}</p>
+                      <h3 className="mg-display mt-1 text-[13px] uppercase leading-[1.15] tracking-[0.015em]">{item.name}</h3>
+                      <p className={`${m} mt-1.5 text-[9px] uppercase leading-relaxed text-[var(--mg-brown)]`}>
+                        Size {item.size} · Qty {item.qty}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setOpenItem(open ? -1 : i)}
+                        aria-expanded={open}
+                        className="mt-1.5 text-[10px] font-bold underline decoration-[var(--mg-brown)] underline-offset-2"
+                      >
+                        {open ? "Hide item info" : "Item information"}
+                      </button>
+                    </div>
+                    <div className="text-right">
+                      <span className="mg-display block text-[13px] tabular-nums">₹{inr(net)}</span>
+                      {item.discount > 0 && (
+                        <span className={`${m} mt-1 block text-[9px] text-[var(--mg-brown)] line-through`}>₹{inr(item.mrp * item.qty)}</span>
+                      )}
+                    </div>
+                    {open && (
+                      <div className={`${m} col-span-2 mt-3 rounded-xl border-l-2 border-[var(--mg-brown)] bg-white px-3 py-2 text-[9px] leading-relaxed text-[var(--mg-brown)]`}>
+                        SKU: {item.sku}
+                        <br />
+                        HSN: {item.hsn}
+                        <br />
+                        MRP: ₹{inr(item.mrp)} · Discount: ₹{inr(item.discount)}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+
+            <dl className={`${m} space-y-2 py-4 text-[11px]`}>
+              <Leader label="Subtotal (MRP)" value={`₹${inr(t.subtotal)}`} />
+              <Leader label="Discount" value={`− ₹${inr(t.discount)}`} />
+              <Leader label="SGST" value={`₹${inr(data.sgst)}`} />
+              <Leader label="CGST" value={`₹${inr(data.cgst)}`} />
+            </dl>
+
+            <div className="relative overflow-hidden rounded-2xl bg-[var(--mg-sand)] p-4">
+              <span aria-hidden="true" className="pointer-events-none absolute -right-5 -top-7 h-24 w-24 rounded-full border-[10px] border-black/[0.06]" />
+              <div className="relative flex items-end justify-between gap-2">
+                <div>
+                  <p className="mg-display text-[9px] uppercase tracking-[0.22em]">Final total</p>
+                  <p className="mt-1 text-[10px]">Inclusive of applicable taxes</p>
+                </div>
+                <p className="mg-display text-[29px] leading-none tracking-[-0.04em]">₹{inr(t.total)}</p>
+              </div>
+            </div>
+
+            <ActionGrid
+              className="mt-4"
+              items={[
+                { key: "history", icon: "history", label: "History", onClick: () => setModal("history") },
+                { key: "email", icon: "mail", label: "Email", onClick: () => setModal("email") },
+                { key: "download", icon: "download", label: "Download", onClick: handleDownload },
+              ]}
+            />
+          </section>
+
+          {/* 4. Video */}
+          <VideoCard />
+
+          {/* 5. Mango Club, coupons, profile */}
+          {club && <TierCard club={club} mobile={data.customer.mobile} sectionRef={clubRef} />}
+          {club && <CouponsSection coupons={club.coupons} />}
+          <ProfileCard data={data} onSave={onSaveProfile} />
+
+          {/* 6. Discover what's next (below the profile form) */}
+          <section aria-label="Discover the collection" className="relative min-h-[430px] overflow-hidden rounded-3xl bg-[var(--mg-ink)] text-white">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={NEW_ARRIVALS_IMAGE}
               alt="Mango new season fashion campaign"
@@ -1586,39 +1630,99 @@ function ReceiptView({
             </div>
           </section>
 
-          <VideoCard />
-          <ProfileCard data={data} onSave={onSaveProfile} />
-
-          <section aria-label="Exchange" className="overflow-hidden rounded-3xl border border-[var(--mg-edge)] bg-white text-[var(--mg-ink)]">
-            <h2><button type="button" onClick={() => setExchangeOpen((o) => !o)} aria-expanded={exchangeOpen} aria-controls={exchangeId} className={`flex w-full items-center justify-between gap-4 px-4 py-4 text-left active:bg-[var(--mg-wash)] ${onPaper}`}><span><span className="mg-display block text-[22px] uppercase leading-none tracking-[-0.02em]">Exchange policy</span><span className="mt-1.5 block text-[12px] text-[var(--mg-brown)]">{exchange.days} days to change your mind</span></span><span className={`${m} text-lg`}>{exchangeOpen ? "−" : "+"}</span></button></h2>
-            <Collapse open={exchangeOpen} id={exchangeId}><ol className={`${m} list-decimal space-y-2 border-t border-dashed border-[var(--mg-line)] px-8 py-4 text-[10px] leading-relaxed text-[var(--mg-brown)]`}>{exchange.points.map((p) => <li key={p}>{p}</li>)}</ol></Collapse>
+          {/* 7. Remaining flow */}
+          <section aria-label="Exchange" className="overflow-hidden rounded-3xl border border-black/10 bg-white text-[var(--mg-ink)]">
+            <h2>
+              <button
+                type="button"
+                onClick={() => setExchangeOpen((o) => !o)}
+                aria-expanded={exchangeOpen}
+                aria-controls={exchangeId}
+                className={`flex w-full items-center justify-between gap-4 px-4 py-4 text-left active:bg-[var(--mg-wash)] ${onPaper}`}
+              >
+                <span>
+                  <span className="mg-display block text-[22px] uppercase leading-none tracking-[-0.02em]">Exchange policy</span>
+                  <span className="mt-1.5 block text-[12px] text-[var(--mg-brown)]">{exchange.days} days to change your mind</span>
+                </span>
+                <span className={`${m} text-lg`}>{exchangeOpen ? "−" : "+"}</span>
+              </button>
+            </h2>
+            <Collapse open={exchangeOpen} id={exchangeId}>
+              <ol className={`${m} list-decimal space-y-2 border-t border-dashed border-[var(--mg-line)] px-8 py-4 text-[10px] leading-relaxed text-[var(--mg-brown)]`}>
+                {exchange.points.map((p) => <li key={p}>{p}</li>)}
+              </ol>
+            </Collapse>
           </section>
 
           <section aria-label="Reach us" className="text-[var(--mg-ink)]">
-            <p className="mg-display text-[9px] uppercase tracking-[0.24em] text-[var(--mg-brown)]">We’re here if you need us</p><h2 className="mg-display mt-1 text-[26px] uppercase leading-none tracking-[-0.04em]">Stay in touch.</h2>
-            <div className="mt-4 grid grid-cols-3 border-y border-[var(--mg-edge)]">{[
-              { href: instagramUrl, icon: "instagram" as IconName, label: "Instagram", external: true },
-              { href: `tel:${data.callTo}`, icon: "phone" as IconName, label: "Call us", external: false },
-              { href: `mailto:${data.emailTo}`, icon: "mail" as IconName, label: "Email us", external: false },
-            ].map((a, i) => <a key={a.label} href={a.href} target={a.external ? "_blank" : undefined} rel={a.external ? "noopener noreferrer" : undefined} className={`flex flex-col items-center gap-1.5 py-3 text-[9px] font-bold uppercase tracking-[0.08em] active:bg-[var(--mg-sand)] ${i ? "border-l border-[var(--mg-line)]" : ""}`}><Icon name={a.icon} className="h-5 w-5 text-[var(--mg-brown)]" />{a.label}</a>)}</div>
-            <a href={storeLocatorUrl} target="_blank" rel="noopener noreferrer" className="mt-4 flex items-center justify-between rounded-2xl bg-[var(--mg-ink)] px-4 py-4 text-white active:bg-[var(--mg-brown)]"><span><span className="mg-display block text-[15px] uppercase tracking-[0.03em]">Find a MANGO store</span><span className="mt-1 block text-[11px] text-white/65">Locate your nearest store in India</span></span><Icon name="arrow" className="h-5 w-5 shrink-0 text-[var(--mg-sand)]" /></a>
+            <p className="mg-display text-[9px] uppercase tracking-[0.24em] text-[var(--mg-brown)]">We’re here if you need us</p>
+            <h2 className="mg-display mt-1 text-[26px] uppercase leading-none tracking-[-0.04em]">Stay in touch.</h2>
+            <ActionGrid
+              className="mt-4"
+              items={[
+                { key: "instagram", icon: "instagram", label: "Instagram", href: instagramUrl, external: true },
+                { key: "call", icon: "phone", label: "Call us", href: `tel:${data.callTo}` },
+                { key: "email", icon: "mail", label: "Email us", href: `mailto:${data.emailTo}` },
+              ]}
+            />
+            <a
+              href={storeLocatorUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 flex items-center justify-between rounded-2xl bg-[var(--mg-ink)] px-4 py-4 text-white active:bg-[var(--mg-brown)]"
+            >
+              <span>
+                <span className="mg-display block text-[15px] uppercase tracking-[0.03em]">Find a MANGO store</span>
+                <span className="mt-1 block text-[11px] text-white/65">Locate your nearest store in India</span>
+              </span>
+              <Icon name="arrow" className="h-5 w-5 shrink-0 text-[var(--mg-sand)]" />
+            </a>
           </section>
 
-          <section aria-label="Store" className="overflow-hidden rounded-3xl border border-[var(--mg-edge)] bg-white px-4 py-4 text-[var(--mg-ink)]">
+          <section aria-label="Store" className="overflow-hidden rounded-3xl border border-black/10 bg-white p-4 text-[var(--mg-ink)]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={STORE_IMAGE}
               alt={`${store.name} storefront`}
-              className="mb-4 h-[190px] w-full object-cover"
+              className="mb-4 h-[190px] w-full rounded-2xl object-cover"
               onError={(e) => { e.currentTarget.style.display = "none"; }}
             />
-            <div className="flex items-start justify-between gap-3"><div><p className="mg-display text-[9px] uppercase tracking-[0.22em] text-[var(--mg-brown)]">The place</p><h2 className="mg-display mt-1 text-[18px] uppercase leading-tight">{store.name}</h2></div><Icon name="store" className="h-6 w-6 shrink-0 text-[var(--mg-brown)]" /></div>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="mg-display text-[9px] uppercase tracking-[0.22em] text-[var(--mg-brown)]">The place</p>
+                <h2 className="mg-display mt-1 text-[18px] uppercase leading-tight">{store.name}</h2>
+              </div>
+              <Icon name="store" className="h-6 w-6 shrink-0 text-[var(--mg-brown)]" />
+            </div>
             <p className="mt-3 text-[12px] leading-relaxed">{store.address}</p>
-            <div className={`${m} mt-3 grid grid-cols-2 gap-2 border-t border-[var(--mg-line)] pt-3 text-[9px]`}><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${store.name}, ${store.address}`)}`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">GET DIRECTIONS ↗</a><a href={`tel:${store.phone}`} className="text-right underline underline-offset-2">CALL STORE ↗</a></div>
-            <button type="button" onClick={() => setContactOpen((o) => !o)} aria-expanded={contactOpen} aria-controls={contactId} className="mt-4 flex w-full items-center justify-between border-t border-[var(--mg-line)] pt-3 text-left"><span className="mg-display text-[10px] uppercase tracking-[0.12em]">{contactOpen ? "Hide store & tax details" : "Store, contact & tax details"}</span><span className={`${m} text-sm`}>{contactOpen ? "−" : "+"}</span></button>
-            <Collapse open={contactOpen} id={contactId}><div className={`${m} mt-3 space-y-2 border-t border-dashed border-[var(--mg-line)] pt-3 text-[10px] leading-relaxed text-[var(--mg-brown)]`}><p>Email: <a href={`mailto:${store.email}`} className="font-bold text-[var(--mg-ink)] underline">{store.email}</a></p><p>Phone: <a href={`tel:${store.phone}`} className="font-bold text-[var(--mg-ink)] underline">{store.phone}</a></p><p>Associate: <strong className="text-[var(--mg-ink)]">{store.associate}</strong></p><p>GSTIN: <strong className="text-[var(--mg-ink)]">{store.gstin}</strong></p><p>Registered office: {data.registeredOffice}</p></div></Collapse>
+            <div className={`${m} mt-3 grid grid-cols-2 gap-2 border-t border-[var(--mg-line)] pt-3 text-[9px]`}>
+              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${store.name}, ${store.address}`)}`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">GET DIRECTIONS ↗</a>
+              <a href={`tel:${store.phone}`} className="text-right underline underline-offset-2">CALL STORE ↗</a>
+            </div>
+            <button
+              type="button"
+              onClick={() => setContactOpen((o) => !o)}
+              aria-expanded={contactOpen}
+              aria-controls={contactId}
+              className="mt-4 flex w-full items-center justify-between border-t border-[var(--mg-line)] pt-3 text-left"
+            >
+              <span className="mg-display text-[10px] uppercase tracking-[0.12em]">{contactOpen ? "Hide store & tax details" : "Store, contact & tax details"}</span>
+              <span className={`${m} text-sm`}>{contactOpen ? "−" : "+"}</span>
+            </button>
+            <Collapse open={contactOpen} id={contactId}>
+              <div className={`${m} mt-3 space-y-2 border-t border-dashed border-[var(--mg-line)] pt-3 text-[10px] leading-relaxed text-[var(--mg-brown)]`}>
+                <p>Email: <a href={`mailto:${store.email}`} className="font-bold text-[var(--mg-ink)] underline">{store.email}</a></p>
+                <p>Phone: <a href={`tel:${store.phone}`} className="font-bold text-[var(--mg-ink)] underline">{store.phone}</a></p>
+                <p>Associate: <strong className="text-[var(--mg-ink)]">{store.associate}</strong></p>
+                <p>GSTIN: <strong className="text-[var(--mg-ink)]">{store.gstin}</strong></p>
+                <p>Registered office: {data.registeredOffice}</p>
+              </div>
+            </Collapse>
           </section>
 
-          <section className="relative overflow-hidden bg-[var(--mg-ink)] p-5 text-white">
+          {/* Sign-off card (rounded to match every other card) */}
+          <section className="relative overflow-hidden rounded-3xl bg-[var(--mg-ink)] p-5 text-white">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={CAMPAIGN_HERO_IMAGE}
               alt=""
@@ -1628,14 +1732,32 @@ function ReceiptView({
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/65 to-black/20" />
             <div className="relative">
-            <BrandImage src={logoSrc} alt="MANGO" width={320} height={80} className="h-7 w-auto max-w-[55%] object-contain object-left brightness-0 invert" fallbackClassName="mg-display text-[22px] uppercase tracking-[0.12em] text-white" />
-            <p className="mg-display mt-7 text-[34px] uppercase leading-[0.9] tracking-[-0.05em]">See you<br /><span className="text-[var(--mg-sand)]">in style.</span></p>
-            <p className="mt-3 text-[12px] text-white/65">Thank you for making this piece part of your story.</p>
-            <div className={`${m} mt-5 border-t border-white/25 pt-3 text-[9px] leading-relaxed text-white/55`}>REGISTERED OFFICE<br /><span className="text-white/80">{data.registeredOffice}</span><div className="mt-3 flex items-center justify-between gap-2 border-t border-white/20 pt-3"><span>INVOICE {data.invoiceNo}</span><button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="font-bold text-[var(--mg-sand)] underline underline-offset-2">BACK TO TOP ↑</button></div></div>
+              <BrandImage
+                src={logoSrc}
+                alt="MANGO"
+                width={320}
+                height={80}
+                className="h-7 w-auto max-w-[55%] object-contain object-left brightness-0 invert"
+                fallbackClassName="mg-display text-[22px] uppercase tracking-[0.12em] text-white"
+              />
+              <p className="mg-display mt-7 text-[34px] uppercase leading-[0.9] tracking-[-0.05em]">See you<br /><span className="text-[var(--mg-sand)]">in style.</span></p>
+              <p className="mt-3 text-[12px] text-white/65">Thank you for making this piece part of your story.</p>
+              <div className={`${m} mt-5 border-t border-white/25 pt-3 text-[9px] leading-relaxed text-white/55`}>
+                REGISTERED OFFICE<br />
+                <span className="text-white/80">{data.registeredOffice}</span>
+                <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/20 pt-3">
+                  <span>INVOICE {data.invoiceNo}</span>
+                  <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="font-bold text-[var(--mg-sand)] underline underline-offset-2">BACK TO TOP ↑</button>
+                </div>
+              </div>
             </div>
           </section>
         </div>
-        <footer className="mt-6 flex items-center justify-center gap-2 border-t border-[var(--mg-line)] bg-white px-5 py-4 text-[11px] text-[var(--mg-brown)]"><span>Made smarter with</span><BrandImage src={rdepLogoSrc} alt="rdep" width={240} height={80} className="h-6 w-auto" fallbackClassName="text-base font-bold tracking-tight text-[var(--mg-ink)]" /></footer>
+
+        <footer className="mt-6 flex items-center justify-center gap-2 border-t border-[var(--mg-line)] bg-white px-5 py-4 text-[11px] text-[var(--mg-brown)]">
+          <span>Powered by</span>
+          <BrandImage src={rdepLogoSrc} alt="rdep" width={240} height={80} className="h-6 w-auto" fallbackClassName="text-base font-bold tracking-tight text-[var(--mg-ink)]" />
+        </footer>
       </main>
 
       {/* ---------------------------- Transaction History Popup ---------------------------- */}
@@ -1700,24 +1822,6 @@ function ReceiptView({
               </li>
             ))}
           </ol>
-        </Modal>
-      )}
-
-      {/* ---------------------------- QR Code Popup ---------------------------- */}
-      {modal === "qr" && (
-        <Modal title="RECEIPT QR CODE" onClose={closeModal} scale={scale}>
-          <div className="flex flex-col items-center py-2 text-center">
-            <div className="mb-4 flex h-48 w-48 items-center justify-center rounded-2xl border border-black/10 bg-white p-3 shadow-inner">
-              {qrSrc ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={qrSrc} alt="Receipt QR code" className="h-full w-full object-contain" />
-              ) : (
-                <PlaceholderQR seed={data.invoiceNo} />
-              )}
-            </div>
-            <p className="mg-display text-[14px] uppercase tracking-wider text-[var(--mg-ink)]">Invoice #{data.invoiceNo}</p>
-            <p className="mt-1 text-[13px] text-[var(--mg-brown)]">Scan this code at the store counter for instant returns or inquiries.</p>
-          </div>
         </Modal>
       )}
 
