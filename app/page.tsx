@@ -7,8 +7,8 @@
  * one consistent card language (rounded-3xl cards, rounded-2xl inner blocks and buttons).
  * Popups are light rounded sheets.
  *
- * Section order: header, feedback, purchase (you paid), selection + totals + History/Email/Download,
- * video, Mango Club tier, coupons, profile, discover, exchange, reach us, store, sign-off, powered by.
+ * Section order: header, purchase (you paid), selection + totals + History/Email/Download,
+ * video, feedback, Mango Club tier, coupons, profile, discover, exchange, reach us, store, sign-off, powered by.
  *
  * Phone first: hover styles only apply on devices that can hover; on touch every button and link
  * dips while pressed and uses `active:` colours.
@@ -1470,10 +1470,7 @@ function ReceiptView({
         </header>
 
         <div className="space-y-6 px-5 pb-0 pt-5">
-          {/* 1. Feedback sits right under the header */}
-          <SleekRateCard data={data} onSubmit={onSubmitFeedback} />
-
-          {/* 2. Purchase overview: compact. Amount + saving + QR on one row, invoice and payment on one line */}
+          {/* 1. Purchase overview: compact. Amount + saving + QR on one row, invoice and payment on one line */}
           <section aria-label="Purchase overview" className={`rounded-3xl bg-white p-4 text-[var(--mg-ink)] ${lift}`}>
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
@@ -1511,7 +1508,7 @@ function ReceiptView({
             </dl>
           </section>
 
-          {/* 3. Selection, totals and History / Email / Download */}
+          {/* 2. Selection, totals and History / Email / Download */}
           <section aria-label="Purchase summary" className={`rounded-3xl bg-white p-5 text-[var(--mg-ink)] ${lift}`}>
             <div className="flex items-end justify-between gap-2">
               <div>
@@ -1594,8 +1591,11 @@ function ReceiptView({
             />
           </section>
 
-          {/* 4. Video */}
+          {/* 3. Video */}
           <VideoCard />
+
+          {/* 4. Feedback (moved right below the video) */}
+          <SleekRateCard data={data} onSubmit={onSubmitFeedback} />
 
           {/* 5. Mango Club, coupons, profile */}
           {club && <TierCard club={club} mobile={data.customer.mobile} sectionRef={clubRef} />}
